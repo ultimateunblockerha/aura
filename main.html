@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Level</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f3e5f5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+        .aura-level {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #6a1b9a;
+        }
+        .aura-number {
+            font-size: 48px;
+            color: #8e24aa;
+            margin-bottom: 20px;
+        }
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #7b1fa2;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #6a1b9a;
+        }
+        .input-field {
+            padding: 5px 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 10px;
+            width: 200px;
+        }
+        .confirmation-message {
+            font-size: 16px;
+            color: #4a148c;
+            margin-top: 20px;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #6a1b9a;
+        }
+        .admin-panel {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        #leaderboard {
+            margin-top: 20px;
+            text-align: left;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="aura-level">Aura Level</div>
+        <div class="aura-number" id="auraNumber">0</div>
+        <button class="button" onclick="promptUsernameAndAddAura()">Add Aura</button>
+        <button class="button" onclick="promptUsernameAndLoseAura()">Lose Aura</button>
+        <button class="button" onclick="redeemCode()">Redeem Code</button>
+        <button class="button" onclick="resetAura()">Reset Aura</button>
+        <button class="button" onclick="saveAura()">Save Aura</button>
+        <button class="button" onclick="loadAura()">Load Aura</button>
+        <button class="button" onclick="showAdminLogin()">Admin Panel</button>
+        <div class="confirmation-message" id="confirmationMessage" style="display: none;"></div>
+        <input type="text" class="input-field" id="codeInput" placeholder="Enter Code">
+        <div id="leaderboard"></div>
+    </div>
+    <div class="admin-panel" id="adminPanel">
+        <h3>Admin Panel</h3>
+        <input type="text" class="input-field" id="adminIpInput" placeholder="IP to Block">
+        <button class="button" onclick="blockIP()">Block IP</button>
+        <input type="number" class="input-field" id="adminAuraInput" placeholder="Aura Amount">
+        <button class="button" onclick="adminAddAura()">Add Aura</button>
+        <button class="button" onclick="adminRemoveAura()">Remove Aura</button>
+    </div>
+    <div class="footer">Made by Koro</div>
+
+    <script>
+        let aura = 0;
+        let lastUpdate = new Date().toISOString().split('T')[0];
+        const adminCode = "korosigmaboi"; // Change this to the actual admin code
+
+        // Object to store codes and their corresponding aura values
+        const codes = {
+            "SECRET_CODE_1": 1000000,
+            "SECRET_CODE_2": 500000,
+            "SECRET_CODE_3": 250000,
+            // Add more codes as needed
+        };
+
+        const specialPhrases = [
+            "William is ugly",
+            "Zoe is so cool",
+            "Mohammed is the rizzler",
+            "Cairo loves food"
+        ];
+
+        const blockedIPs = JSON.parse(localStorage.getItem('blockedIPs')) || [];
+
+        function addAura() {
+            const action = prompt("Enter the action you did:");
+            if (action) {
+                if (specialPhrases.includes(action)) {
+                    aura += 1000000;
+                    showMessage(`You added 1,000,000 aura for: ${action}`);
+                } else {
+                    aura += 500;
+                    showMessage(`You added 500 aura for: ${action}`);
+                }
+                updateAuraDisplay();
+            }
+        }
+
+        function loseAura() {
+            aura -= 500;
+            if (aura < 0) {
+                aura = 0;
+            }
+            updateAuraDisplay();
+            showMessage('You lost 500 aura.');
+        }
+
+        function redeemCode() {
+            const code = document.getElementById("codeInput").value.trim();
+            if (codes.hasOwnProperty(code)) {
+                aura += codes[code];
+                updateAuraDisplay();
+                showMessage(`Code redeemed! You got ${codes[code]} aura.`);
+            } else {
+                showMessage('Invalid code.');
+            }
+        }
+
+        function resetAura() {
+            aura = 0;
+            updateAuraDisplay();
+            showMessage('Aura has been reset.');
+        }
+
+        function saveAura() {
+            localStorage.setItem('auraLevel', aura);
+            localStorage.setItem('lastUpdate', lastUpdate);
+            showMessage('Aura level saved.');
+        }
+
+        function loadAura() {
+            const savedAura = localStorage.getItem('auraLevel');
+            const savedLastUpdate = localStorage.getItem('lastUpdate');
+            if (savedAura !== null && savedLastUpdate !== null) {
+                aura = parseInt(savedAura, 10);
+                lastUpdate = savedLastUpdate;
+                updateAuraDisplay();
+                showMessage('Aura level loaded.');
+                // Check if a day has passed and subtract aura if needed
+                const currentDate = new Date().toISOString().split('T')[0];
+                if (currentDate !== lastUpdate) {
+                    const daysPassed = (new Date(currentDate) - new Date(lastUpdate)) / (1000 * 60 * 60 * 24);
+                    aura -= Math.floor(daysPassed) * 500;
+                    if (aura < 0) aura = 0;
+                    lastUpdate = currentDate;
+                    saveAura();
+                }
+            }
+        }
+
+        function showAdminLogin() {
+            const code = prompt("Enter admin code:");
+            if (code === adminCode) {
+                document.getElementById("adminPanel").style.display = "block";
+            } else {
+                alert("Incorrect admin code!");
+            }
+        }
+
+        function blockIP() {
+            const ip = document.getElementById("adminIpInput").value.trim();
+            if (ip) {
+                blockedIPs.push(ip);
+                localStorage.setItem('blockedIPs', JSON.stringify(blockedIPs));
+                showMessage(`IP ${ip} has been blocked.`);
+            }
+        }
+
+        function adminAddAura() {
+            const amount = parseInt(document.getElementById("adminAuraInput").value, 10);
+            if (!isNaN(amount)) {
+                aura += amount;
+                updateAuraDisplay();
+                showMessage(`${amount} aura added by admin.`);
+            }
+        }
+
+        function adminRemoveAura() {
+            const amount = parseInt(document.getElementById("adminAuraInput").value, 10);
+            if (!isNaN(amount)) {
+                aura -= amount;
+                if (aura < 0) aura = 0;
+                updateAuraDisplay();
+                showMessage(`${amount} aura removed by admin.`);
+            }
+        }
+
+        function showMessage(message) {
+            const messageDiv = document.getElementById("confirmationMessage");
+            messageDiv.innerText = message;
+            messageDiv.style.display = "block";
+            setTimeout(() => {
+                messageDiv.style.display = "none";
+            }, 3000);
+        }
+
+        function checkBlockedIP() {
+            // Simplified: In a real-world scenario, you'd get the user's IP address here
+            const userIP = "YOUR_USER_IP"; // Replace with a method to get the user's IP address
+            if (blockedIPs.includes(userIP)) {
+                alert("Your IP is blocked. You cannot access this site.");
+                document.body.innerHTML = "";
+            }
+        }
+
+        function updateAuraDisplay() {
+            document.getElementById("auraNumber").innerText = aura;
+            checkMilestones();
+        }
+
+        window.onload = function() {
+            loadAura();
+            checkBlockedIP();
+        };
+    </script>
+    <script src="badges.js"></script>
+    <script src="leaderboard.js"></script>
+</body>
+</html>
